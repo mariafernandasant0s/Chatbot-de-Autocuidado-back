@@ -291,3 +291,66 @@ app.listen(port, '0.0.0.0', () => {
     console.warn("AVISO: OPENWEATHER_API_KEY não está definida no .env. A função de previsão do tempo não funcionará como esperado.");
   }
 });
+
+// Ajustes para garantir que o servidor sempre retorne JSON válido
+// Adicione este código ao final do seu arquivo server.js, antes da linha app.listen
+
+// --- Middleware para garantir que todas as respostas de erro sejam em formato JSON ---
+app.use((err, req, res, next) => {
+  console.error("LOG: Erro não tratado:", err);
+  
+  // Garantir que a resposta seja sempre JSON
+  res.status(500).json({
+    erro: "Erro interno do servidor",
+    mensagem: err.message || "Ocorreu um erro inesperado",
+    detalhes: process.env.NODE_ENV === 'production' ? null : err.stack
+  });
+});
+
+// --- Tratamento para rotas não encontradas (404) em formato JSON ---
+app.use((req, res, next) => {
+  console.log(`LOG: Rota não encontrada - 404: ${req.method} ${req.originalUrl}`);
+  
+  // Sempre retornar JSON, nunca HTML
+  res.status(404).json({
+    erro: "Rota não encontrada",
+    mensagem: `A rota ${req.originalUrl} não existe neste servidor`,
+    status: 404
+  });
+});
+
+// --- Verificação de saúde do servidor ---
+app.get('/health', (req, res) => {
+  // Endpoint simples para verificar se o servidor está funcionando
+  res.json({
+    status: "online",
+    timestamp: new Date().toISOString(),
+    env: {
+      gemini_api_configured: !!process.env.GEMINI_API_KEY,
+      openweather_api_configured: !!process.env.OPENWEATHER_API_KEY,
+      node_env: process.env.NODE_ENV || 'development'
+    }
+  });
+});
+
+// --- Rota de teste para validar a comunicação cliente-servidor ---
+app.post('/test', (req, res) => {
+  console.log("LOG: Requisição de teste recebida:", req.body);
+  
+  // Retorna os mesmos dados enviados pelo cliente, para validar a comunicação
+  res.json({
+    success: true,
+    message: "Teste de comunicação bem-sucedido",
+    received: req.body,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Modificado para escutar em todas as interfaces (0.0.0.0)
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Servidor rodando em http://0.0.0.0:${port}`);
+  console.log("Arquivos estáticos (index.html, client.js, style.css) devem estar na raiz do projeto.");
+  if (!process.env.OPENWEATHER_API_KEY) {
+    console.warn("AVISO: OPENWEATHER_API_KEY não está definida no .env. A função de previsão do tempo não funcionará como esperado.");
+  }
+});
