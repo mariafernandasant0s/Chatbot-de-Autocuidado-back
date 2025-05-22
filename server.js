@@ -95,24 +95,33 @@ async function getWeather(args) {
     location
   )}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=pt_br`;
 
-  try {
-    const response = await axios.get(url);
-    const weatherData = {
-      location: response.data.name,
-      temperature: response.data.main.temp,
-      description: response.data.weather[0].description,
-      humidity: response.data.main.humidity,
-      windSpeed: response.data.wind.speed,
-    };
-    console.log("LOG: Resultado de getWeather (OpenWeatherMap):", JSON.stringify(weatherData));
-    return weatherData;
-  } catch (error) {
-    console.error("LOG: Erro ao chamar OpenWeatherMap:", error.response?.data?.message || error.message);
-    if (error.response?.status === 404) {
+  const maxRetries = 3;
+  let retryCount = 0;
+
+  while (retryCount < maxRetries) {
+    try {
+      const response = await axios.get(url, { timeout: 10000 }); // 10 segundos de timeout
+      const weatherData = {
+        location: response.data.name,
+        temperature: response.data.main.temp,
+        description: response.data.weather[0].description,
+        humidity: response.data.main.humidity,
+        windSpeed: response.data.wind.speed,
+      };
+      console.log("LOG: Resultado de getWeather (OpenWeatherMap):", JSON.stringify(weatherData));
+      return weatherData;
+    } catch (error) {
+      console.error(`LOG: Erro ao chamar OpenWeatherMap (tentativa ${retryCount + 1}/${maxRetries}):`, error.message);
+      if (error.response?.status === 404) {
         return { error: `Não foi possível encontrar o tempo para "${location}". Verifique o nome da cidade.` };
+      }
+      retryCount++;
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo antes de tentar novamente
     }
-    return { error: "Desculpe, não foi possível obter a previsão do tempo no momento." };
   }
+
+  console.error("LOG: Falha ao obter o tempo após várias tentativas.");
+  return { error: "Desculpe, não foi possível obter a previsão do tempo no momento." };
 }
 
 // --- 3. Mapeamento de Nomes de Funções para Funções Reais ---
