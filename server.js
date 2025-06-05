@@ -1,6 +1,6 @@
 // server.js
-import dotenv from 'dotenv'; // Manter apenas esta importação
-dotenv.config(); // Manter esta configuração
+import dotenv from 'dotenv';
+dotenv.config();
 
 // ... outras importações ...
 import express from "express";
@@ -9,7 +9,6 @@ import cors from "cors";
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 import path from "path";
 import { fileURLToPath } from "url";
-// Remover esta linha: import dotenv from "dotenv"; (duplicada)
 import axios from "axios";
 
 const app = express();
@@ -284,26 +283,6 @@ app.post("/chat", async (req, res) => {
 // --- Rota para Favicon (evita erros 404 no log) ---
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
-// --- Tratamento para rotas não encontradas (404) ---
-app.use((req, res, next) => {
-    console.log(`LOG: Rota não encontrada - 404: ${req.method} ${req.originalUrl}`);
-    if (!res.headersSent) {
-      res.status(404).send("<h1>404 - Página não encontrada</h1><p>O recurso que você está procurando não existe.</p>");
-    }
-});
-
-// Modificado para escutar em todas as interfaces (0.0.0.0)
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Servidor rodando em http://0.0.0.0:${port}`);
-  console.log("Arquivos estáticos (index.html, client.js, style.css) devem estar na raiz do projeto.");
-  if (!process.env.OPENWEATHER_API_KEY) {
-    console.warn("AVISO: OPENWEATHER_API_KEY não está definida no .env. A função de previsão do tempo não funcionará como esperado.");
-  }
-});
-
-// Ajustes para garantir que o servidor sempre retorne JSON válido
-// Adicione este código ao final do seu arquivo server.js, antes da linha app.listen
-
 // --- Middleware para garantir que todas as respostas de erro sejam em formato JSON ---
 app.use((err, req, res, next) => {
   console.error("LOG: Erro não tratado:", err);
@@ -363,3 +342,4 @@ app.listen(port, '0.0.0.0', () => {
     console.warn("AVISO: OPENWEATHER_API_KEY não está definida no .env. A função de previsão do tempo não funcionará como esperado.");
   }
 });
+
